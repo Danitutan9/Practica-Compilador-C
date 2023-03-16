@@ -1,53 +1,62 @@
 grammar CCompiler;
-
-/* NOTAS:
-    - ʎ lo estoy representando como regla opcional (<regla>)?
-    - Lo único que no viene en el enunciado es la especificación de la regla <func>
-    - No sé dónde añadir la regla de <comentarios>
-*/
-
 //Tres partes del programa:
 //    - Zona de declaraciones de constantes y variables (dcllist).
 //    - Zona de declaración e implementación de funciones (funlist).
 //    - Zona de sentencias del programa principal (sentlist).
+// Zona para probar el primer módulo de la gramática: la zona de declaraciones.
 program : dcllist funlist sentlist;
-dcllist : (dcllist dcl)?; // | ʎ
-funlist : (funlist func)?; // | ʎ
+dcllist : dcl dcllist | ;
+funlist : funcdef funlist | ;
 sentlist : mainhead | '{' code '}';
 
+/*  QUEDA:
+ - Reconocer bien las comillas simples y dobles dentro de los STRING_CONST
+ - Indicar que no se permiten las palabras reservadas del lenguaje dentro de los IDENTIFIER;
+ - Reconocer los STRING_CONST con las comillas simples ''' ñlasjfd '''
+*/
+
 // La zona de declaraciones es una lista de declaraciones de constantes:
-dcl : ctelist | varlist;
-ctelist : '#define' CONST_DEF_IDENTIFIER simpvalue '\n' | ctelist '#define' CONST_DEF_IDENTIFIER simpvalue '\n';
+dcl : ctelist | varlist | jump | comment;
+ctelist : '#define' CONST_DEF_IDENTIFIER simpvalue;
 simpvalue : NUMERIC_INTEGER_CONST | NUMERIC_REAL_CONST | STRING_CONST;
-varlist : vardef ';'| varlist vardef ';';
-vardef : tbas IDENTIFIER | tbas IDENTIFIER '=' simpvalue;
+varlist : vardef ';';
+vardef : tbas IDENTIFIER  ('=' simpvalue)?;
 tbas : 'integer' | 'float' | 'string' | tvoid;
 tvoid : 'void';
+jump : IG;
+comment : COMMENT;
 
 // La zona de implementación de funciones es una lista de implementaciones de funciones con una
 // estructura análoga al programa principal.
 funclist : funcdef | funclist funcdef;
 funcdef : funchead '{' code '}';
-funchead : tbas IDENTIFIER '(' typedef ')';
-typedef : (typedef tbas IDENTIFIER)?; // | ʎ
+funchead : tbas IDENTIFIER '(' typedef1 ')';
+typedef1 : typedef2 | ;
+typedef2 : tbas IDENTIFIER | typedef2 ',' tbas IDENTIFIER;
 
+// Necesitamos el Módulo 3 también:
 // La zona de sentencias del programa principal es una lista de sentencias que pueden ser asignaciones
 // y llamadas a procedimientos:
-mainhead : tvoid 'Main' '(' typedef ')';
-code : (code sent)?; // | ʎ
-sent : asig ';' | func_call ';';
+mainhead : tvoid 'Main' '(' typedef1 ')';
+code : sent code | ;
+sent : asig ';' | funccall ';' | vardef ';';
 asig : IDENTIFIER '=' exp;
 exp : exp op exp | factor;
 op : '+' | '-' | '*' | 'DIV' | 'MOD';
 factor : simpvalue | '(' exp ')' | IDENTIFIER subpparamlist;
-subpparamlist : ('(' explist ')')?; // | ʎ
+funccall : IDENTIFIER subpparamlist | CONST_DEF_IDENTIFIER subpparamlist;
+subpparamlist : '(' explist ')' | ;
 explist : exp | exp ',' explist;
-func_call : IDENTIFIER subpparamlist;
 
-// Añadido por nosotros:
-IDENTIFIER : [a-z_][a-z0-9_]+; // Hay que indicar también que no se permiten las palabras reservadas del lenguaje: ~[...];
-CONST_DEF_IDENTIFIER : [A-Z_][a-z0-9_]+;
-NUMERIC_INTEGER_CONST : ('+'|'-')? ('+'|'-')?;
-NUMERIC_REAL_CONST : ('+'|'-')? ([0-9]+'.'[0-9]+ | '.'[0-9]+ | [0-9]+('e'|'E')('+'|'-')?[0-9]+ | ('.')?[0-9]+('.')?('e'|'E')('+'|'-')?('+'|'-')?) ;
-STRING_CONST : ('"' [a-zA-Z]+ '"'); // Esto me da error:  | ''' [a-zA-Z]+ ''');
-                // Hay que añadir también la funcionalidad de añadir delimitadores al propio string_const.
+IG : [ \t\r\n]+ -> skip;
+COMMENT : '//' ~[\r\n]* | '/*' .*? '*/';
+IDENTIFIER : [a-z_][a-z0-9_]+;
+CONST_DEF_IDENTIFIER : [A-Z_][A-Z0-9_]+;
+NUMERIC_INTEGER_CONST : ('+'|'-')? [0-9]+;
+NUMERIC_REAL_CONST : ('+'|'-')? (
+                        [0-9]+'.'[0-9]+ | //punto fijo
+                        '.'[0-9]+ | //punto inicial
+                        [0-9]+('e'|'E')('+'|'-')?[0-9]+ | //exponencial
+                        ([0-9]+'.'[0-9]+ | '.'[0-9]+)('e'|'E')('+'|'-')?[0-9]+ //mixto
+                        ) ;
+STRING_CONST : '"' ~[\r\n]+ '"';

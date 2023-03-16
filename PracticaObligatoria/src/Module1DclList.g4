@@ -22,9 +22,15 @@ tvoid : 'void';
 jump : IG;
 comment : COMMENT;
 
+/*  QUEDA:
+ - Reconocer bien las comillas simples y dobles dentro de los STRING_CONST
+ - Indicar que no se permiten las palabras reservadas del lenguaje dentro de los IDENTIFIER;
+ - Reconocer los STRING_CONST con las comillas simples ''' ñlasjfd '''
+*/
+
 IG : [ \t\r\n]+ -> skip;
-COMMENT : ('//'[a-zA-Z_0-9]+ | '/*' [a-zA-Z_0-9 \t\r\n]+ '*/');
-IDENTIFIER : [a-z_][a-z0-9_]+; // Hay que indicar también que no se permiten las palabras reservadas del lenguaje: ~[...];
+COMMENT : '//' ~[\r\n]* | '/*' .*? '*/';
+IDENTIFIER : [a-z_][a-z0-9_]+;
 CONST_DEF_IDENTIFIER : [A-Z_][A-Z0-9_]+;
 NUMERIC_INTEGER_CONST : ('+'|'-')? [0-9]+;
 NUMERIC_REAL_CONST : ('+'|'-')? (
