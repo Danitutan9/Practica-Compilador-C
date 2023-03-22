@@ -66,6 +66,12 @@ void Main (){
     save(codificado);
     n_alumnos = n_alumnos + 1;
     codificado = codificar_cadena(nombre, (CODIGO DIV codificado));
+    if (1 < 2) {
+        printf("menor");
+    }
+    else {
+        printf("mayor);
+    }
 }
 
 */

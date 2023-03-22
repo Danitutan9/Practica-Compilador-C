@@ -3,7 +3,6 @@ grammar CCompiler;
 //    - Zona de declaraciones de constantes y variables (dcllist).
 //    - Zona de declaración e implementación de funciones (funlist).
 //    - Zona de sentencias del programa principal (sentlist).
-// Zona para probar el primer módulo de la gramática: la zona de declaraciones.
 program : dcllist funlist sentlist;
 dcllist : dcl dcllist | ;
 funlist : funcdef funlist | ;
@@ -12,12 +11,11 @@ sentlist : mainhead | '{' code '}';
 /*  QUEDA:
  - Reconocer bien las comillas simples y dobles dentro de los STRING_CONST
  - Indicar que no se permiten las palabras reservadas del lenguaje dentro de los IDENTIFIER;
- - Reconocer los STRING_CONST con las comillas simples ''' ñlasjfd '''
 */
 
 // La zona de declaraciones es una lista de declaraciones de constantes:
 dcl : ctelist | varlist | jump | comment;
-ctelist : '#define' CONST_DEF_IDENTIFIER simpvalue;
+ctelist : '#define' CONST_DEF_IDENTIFIER simpvalue | '#define' CONST_DEF_IDENTIFIER simpvalue ctelist;
 simpvalue : NUMERIC_INTEGER_CONST | NUMERIC_REAL_CONST | STRING_CONST;
 varlist : vardef ';';
 vardef : tbas IDENTIFIER  ('=' simpvalue)?;
@@ -59,4 +57,36 @@ NUMERIC_REAL_CONST : ('+'|'-')? (
                         [0-9]+('e'|'E')('+'|'-')?[0-9]+ | //exponencial
                         ([0-9]+'.'[0-9]+ | '.'[0-9]+)('e'|'E')('+'|'-')?[0-9]+ //mixto
                         ) ;
-STRING_CONST : '"' ~[\r\n]+ '"';
+STRING_CONST : ["] ~[\r\n"]* ["] | ['] ~[\r\n']* ['];
+
+/*
+    PARTE OPCIONAL
+
+    - Ampliación parte sintáctica: sentencias de control "if", "while", "dowhile", "for", "struct"
+
+    Gramática para estas sentencias:
+
+    sent ::= ...
+     | if
+     | while
+     | dowhile
+     | for
+    if ::= "if" expcond "{" code "}" else
+    7
+    else ::= "else" "{" code "}"
+     | "else" if
+     | ʎ ;
+    while ::= "while" "(" expcond ")" "{" code "}"
+    dowhile ::= "do" "{" code "}" "while" "(" expcond ")" ";"
+    for ::= "for" "(" vardef ";" expcond ";" asig ")" "{" code "}"
+     | "for" "(" asig ";" expcond ";" asig ")" "{" code "}"
+
+    expcond ::= expcond oplog expcond | factorcond
+    oplog ::= "||" | "&"
+    factorcond ::= exp opcomp exp | "(" expcond ")" | "!" factorcond
+    opcomp ::= "<" | ">" | "<=" | ">=" | "=="
+    tbas ::= ...
+     | struct
+    struct ::= "struct" "{" varlist "}"
+
+*/
